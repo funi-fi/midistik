@@ -23,17 +23,18 @@ Use at yuour own risk, no guarantee can be granted for unikely but possible dama
 - reliable debounced button coded is missing
 - Alternative powering option for LiPo, "phantom" MIDI power from external MIDI out for the audio socket ring connection?
 
-### Version history
-V0.1 23.4.2019
+### Links
 
-For controlling MIDI, check out FuniFi Midistik: https://github.com/funi-fi/midistik
-
-https://www.instagram.com/funifimusic/
+For controlling MIDI, check out FuniFi Midistik: 
+https://github.com/funi-fi/midistik
 
 FuniFi Playful DIY synth accessories
-
 https://www.instagram.com/funifimusic/
 
 Board manufactured by PCBWay
-
 https://www.pcbway.com/project/shareproject/Funi_Midistik.html
+
+### Version history
+V0.3 23.4.2019
+V0.2 20.1.2019
+V0.1 15.4.2018
