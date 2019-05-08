@@ -35,6 +35,6 @@ Board manufactured by PCBWay
 https://www.pcbway.com/project/shareproject/Funi_Midistik.html
 
 ### Version history
-V0.3 23.4.2019
-V0.2 20.1.2019
-V0.1 15.4.2018
+- V0.3 23.4.2019
+- V0.2 20.1.2019
+- V0.1 15.4.2018
