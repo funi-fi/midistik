@@ -30,12 +30,15 @@ Use at yuour own risk, no guarantee can be granted for unikely but possible dama
 ### Links
 
 For controlling MIDI, check out FuniFi Midistik: 
+
 https://github.com/funi-fi/midistik
 
 FuniFi Playful DIY synth accessories
+
 https://www.instagram.com/funifimusic/
 
 Board manufactured by PCBWay
+
 https://www.pcbway.com/project/shareproject/Funi_Midistik.html
 
 ### Version history
@@ -48,11 +51,13 @@ For me, this journey started in Tapei, deep bow for Dimension Plus for hosting s
 http://dimensionplus.co/en/index.html
 
 The main source for new knowledge on DIY PCB & Workshopology from Marc Dusseiller & 8BitMixtape hackers
+
 http://www.dusseiller.ch/labs/
 
 http://neo.8bitmixtape.cc/
 
 Amazing SVG2Shenzhem Inkscape PCB design tool by Budi Prakosa
+
 https://github.com/badgeek/svg2shenzhen
 
 https://www.patreon.com/badgeek/posts
