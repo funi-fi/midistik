@@ -42,3 +42,16 @@ https://www.pcbway.com/project/shareproject/Funi_Midistik.html
 - V0.3 23.4.2019
 - V0.2 20.1.2019
 - V0.1 15.4.2018
+
+### Acknowedgements
+For me, this journey started in Tapei, deep bow for Dimension Plus for hosting several gatherings
+http://dimensionplus.co/en/index.html
+
+The main source for new knowledge on DIY PCB & Workshopology from Marc Dusseiller & 8BitMixtape hackers
+http://www.dusseiller.ch/labs/
+http://neo.8bitmixtape.cc/
+
+Amazing SVG2Shenzhem Inkscape PCB design tool by Budi Prakosa
+https://github.com/badgeek/svg2shenzhen
+https://www.patreon.com/badgeek/posts
+
