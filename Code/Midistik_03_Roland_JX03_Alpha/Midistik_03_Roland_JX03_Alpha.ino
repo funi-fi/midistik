@@ -72,20 +72,15 @@ SoftwareSerial swSerial(5, MIDIPIN);  // RX, TX  // RX not used, has to be defin
   channell, CC addresses and values accordingly in the Main loop.
   
 
-KORG VOLCA SAMPLE MIDI CC PARAMETERS
-http://www.korg.com/us/products/dj/volca_sample/
+ROLAND JX-03 MIDI CC parameters
+https://static.roland.com/assets/media/pdf/JX-03_MIDI_Imple_e02_W.pdf
 
-07  Volume
-10  Pan
-40  Sample start
-41  Sample length
-42  HiCut
-43  Speed
-44  Pitch EG Int
-45  Pitch EG Attack
-46  Pitch EG Decay
-47  Amp EG Attack
-48  Amp EG Decay
+...
+71  VCF RESONANCE
+72  ENV RELEASE TIME
+73  ENV ATTACK TIME
+74  VCF CUTOFF
+...
 */
 
 // -------------------------- SETUP ------------------------------------
@@ -99,7 +94,7 @@ void setup()
   
   pixels.begin();                                            // This initializes the NeoPixel library.
   pixels.setBrightness(20);
-  pixels.setPixelColor(0, pixels.Color(255, 255, 255));      // Neopixel color, use eg for debugging versions
+  pixels.setPixelColor(0, pixels.Color(255, 0, 255));      // Neopixel color, use eg for debugging versions
   pixels.show();   
   delay(50);
   
@@ -117,12 +112,10 @@ uint16_t analogReadScaled()                                  // Scaling for pot 
 void loop()
 {
 
-    
-  // cycle MIDI channels 1-10 (Volca Sample), cycle 0xB0-0xB1 if just channel 1 or change to some other cycle logic of your choice
-    for (uint8_t midiStatusByte = 0xB0; midiStatusByte < 0xB9; midiStatusByte ++) { 
-
-    //midiClock();                                            // Sends MIDI Clock, comment out if using internal tempo from Volca
-    midiMsg(midiStatusByte, 43, random(0, 127));              // eg. MIDI CC 43, Sample Speed Volca Sample, play with random ranges.
+    // cycle MIDI cc values, eg 71-74, 
+    for (uint8_t midiCC = 74; midiCC < 75; midiCC ++) { 
+    //midiClock();                                              // Sends MIDI Clock, comment out if using internal tempo from Volca
+    midiMsg(0xB0, midiCC, random(0, 127));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
     blinke();                                                 // Blink LED indicator
     delay(analogReadScaled());                                // Loop speed from pot
   }

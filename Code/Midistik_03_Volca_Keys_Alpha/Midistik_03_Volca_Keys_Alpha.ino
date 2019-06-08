@@ -72,20 +72,25 @@ SoftwareSerial swSerial(5, MIDIPIN);  // RX, TX  // RX not used, has to be defin
   channell, CC addresses and values accordingly in the Main loop.
   
 
-KORG VOLCA SAMPLE MIDI CC PARAMETERS
-http://www.korg.com/us/products/dj/volca_sample/
+/*
+KORG VOLCA KEYS MIDI CC PARAMETERS
+http://i.korg.com/uploads/Support/USA_volcakeys_MIDI_Chart_E.pdf
 
-07  Volume
-10  Pan
-40  Sample start
-41  Sample length
-42  HiCut
-43  Speed
-44  Pitch EG Int
-45  Pitch EG Attack
-46  Pitch EG Decay
-47  Amp EG Attack
-48  Amp EG Decay
+05  Portamento
+  First Midistik experiemnts have been tested with Korg Volca series, but you
+  can just check MIDI implementation chart of your MIDI device and change the
+  channell, CC addresses and values accordingly in the Main loop.
+  
+
+ROLAND JX-03 MIDI CC parameters
+https://static.roland.com/assets/media/pdf/JX-03_MIDI_Imple_e02_W.pdf
+
+...
+71  VCF RESONANCE
+72  ENV RELEASE TIME
+73  ENV ATTACK TIME
+74  VCF CUTOFF
+...
 */
 
 // -------------------------- SETUP ------------------------------------
@@ -117,12 +122,61 @@ uint16_t analogReadScaled()                                  // Scaling for pot 
 void loop()
 {
 
-    
-  // cycle MIDI channels 1-10 (Volca Sample), cycle 0xB0-0xB1 if just channel 1 or change to some other cycle logic of your choice
-    for (uint8_t midiStatusByte = 0xB0; midiStatusByte < 0xB9; midiStatusByte ++) { 
+    // cycle MIDI cc values, eg 71-74, 
+    for (uint8_t midiCC = 27; midiCC < 29; midiCC ++) { 
+    //midiClock();                                              // Sends MIDI Clock, comment out if using internal tempo from Volca
+    midiMsg(0xB0, midiCC, random(0, 127));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
+    blinke();                                                 // Blink LED indicator
+11  Expression
+40  Voice
+41  Octave
+42  Detune
+43  VCO EG Int
+44  Cutoff
+45  VCF EG Int
+46  LFO Rate
+47  LFO Pitch Int
+48  LFO Cutoff Int
+49  EG Attack
+50  EG Decay/Release
+51  EG Sustain
+52  Delay Time
+53  Delay Feedback
 
-    //midiClock();                                            // Sends MIDI Clock, comment out if using internal tempo from Volca
-    midiMsg(midiStatusByte, 43, random(0, 127));              // eg. MIDI CC 43, Sample Speed Volca Sample, play with random ranges.
+*/
+// -------------------------- SETUP ------------------------------------
+
+void setup()
+{
+  pinMode(NEOPIXELPIN, OUTPUT);
+  pinMode(MIDIPIN, OUTPUT);
+  pinMode(LEDPIN, OUTPUT);
+  swSerial.begin(31250);                                     // Starts Software Serial with MIDI speed
+  
+  pixels.begin();                                            // This initializes the NeoPixel library.
+  pixels.setBrightness(20);
+  pixels.setPixelColor(0, pixels.Color(255, 255, 255));      // Neopixel color, use eg for debugging versions
+  pixels.show();   
+  delay(50);
+  
+}
+
+uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
+{
+  uint16_t value = analogRead(POTI);
+  if (value > 511) value = 511;
+  return value * 2;
+}
+
+// -------------------------- MAIN LOOP  ------------------------------------
+
+void loop()
+{
+
+    // cycle MIDI cc values 43-45, VCO EG Int -> Cutoff -> VCF EG int in Volca Keys
+    for (uint8_t midiCC = 43; midiCC < 46; midiCC ++) { 
+    midiClock();                                              // Sends MIDI Clock, comment out if using internal tempo from Volca
+    midiMsg(0xB0, midiCC, random(0, 127));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
     blinke();                                                 // Blink LED indicator
     delay(analogReadScaled());                                // Loop speed from pot
   }
