@@ -41,30 +41,6 @@
   the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
    
- */
-
-#ifdef __AVR__                        // From 8Bitmixtape code, needed?
-#include <avr/power.h>
-#endif
-
-#include <Adafruit_NeoPixel.h>
-#include <SoftwareSerial.h>
-
-// hardware description / pin connections
-#define NEOPIXELPIN   0
-#define LEDPIN        1
-#define MIDIPIN       2
-#define POTI          A2
-#define BUTTON        A3               // Button in Analog pin, from 8BitMixtape code, where two buttons in same pin
-#define NUMPIXELS     1                // Option for several neopixels
-
-uint8_t playMode = 1;                   // Toggle modes 1-n
-
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIXELPIN, NEO_GRB + NEO_KHZ800);
-SoftwareSerial swSerial(5, MIDIPIN);  // RX, TX  // RX not used, has to be defined?, TX = MIDI out
-
-
-/*
 
 -------------------------- MIDI CC NOTES ------------------------------------
 
@@ -89,45 +65,48 @@ http://www.korg.com/us/products/dj/volca_sample/
 48  Amp EG Decay
 */
 
-// -------------------------- SETUP ------------------------------------
 
-void setup()
-{
-  pinMode(NEOPIXELPIN, OUTPUT);
-  pinMode(MIDIPIN, OUTPUT);
-  pinMode(LEDPIN, OUTPUT);
-  swSerial.begin(31250);                                     // Starts Software Serial with MIDI speed
-  
-  pixels.begin();                                            // This initializes the NeoPixel library.
-  pixels.setBrightness(20);
-  setNeopixel(255,255,0);  
-  delay(50);
-  
+#ifdef __AVR__                        // From 8Bitmixtape code, needed?
+#include <avr/power.h>
+#endif
+
+#include <Adafruit_NeoPixel.h>
+#include <SoftwareSerial.h>
+
+// hardware description / pin connections
+#define NEOPIXELPIN   0
+#define LEDPIN        1
+#define MIDIPIN       2
+#define POTI          A2
+#define BUTTON        A3               // Button in Analog pin, from 8BitMixtape code, where two buttons in same pin
+#define NUMPIXELS     1                // Option for several neopixels
+
+uint8_t playMode = 1;                  // Toggle modes 1-n
+uint8_t cc = 43;                       // MIDI cc number
+uint8_t chanMin = 1;                   // MIDI channel minimum 
+uint8_t chanMax = 10;                  // MIDI chanel maximum, keep same as minimum unless cycling channells
+uint8_t ccMin = 0;                     // MIDI cc data value minimum
+uint8_t ccMax = 127;                   // MIDI cc data value maximum
+
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIXELPIN, NEO_GRB + NEO_KHZ800);
+SoftwareSerial swSerial(5, MIDIPIN);  // RX, TX  // RX not used, has to be defined?, TX = MIDI out
+
+
+
+// -------------------------- FUNCTIONS ---------------------------------
+
+
+
+void setNeopixel(uint8_t R, uint8_t G, uint8_t B){
+  pixels.setPixelColor(0, pixels.Color(R, G, B));
+  pixels.show(); 
 }
 
 uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
 {
   uint16_t value = analogRead(POTI);
-  if (value > 511) value = 511;
+  constrain (value, 0, 511);
   return value * 2;
-}
-
-// -------------------------- MAIN LOOP  ------------------------------------
-
-void loop()
-{
-
-    
-  // cycle MIDI channels 1-10 (Volca Sample), cycle 0xB0-0xB1 if just channel 1 or change to some other cycle logic of your choice
-    for (uint8_t midiStatusByte = 0xB0; midiStatusByte < 0xB9; midiStatusByte ++) { 
-
-    //midiClock();                                            // Sends MIDI Clock, comment out if using internal tempo from Volca
-    midiMsg(midiStatusByte, 43, random(0, 127));              // eg. MIDI CC 43, Sample Speed Volca Sample, play with random ranges.
-    blinke();                                                 // Blink LED indicator
-    getButton();
-    delay(analogReadScaled());                                // Loop speed from pot
-  }
-
 }
 
 void midiMsg(uint8_t cmd, uint8_t pitch, uint8_t velocity) {  // Same structure as Note on/off for MIDI CC
@@ -146,19 +125,74 @@ void blinke(){                                               // Blink indicator 
   digitalWrite(LEDPIN, LOW);
 }
 
-void getButton(){                                             // Button in Analog pin
+void getPlayMode(){                                             // Button in Analog pin
   if (analogRead(BUTTON) < 380){                              // More buttons with different pulldown resistors
-    playMode = playMode + 1 && 3;
+    playMode = (playMode + 1) % 4;                            // Toggle 0-3
   }
   return;
 }
 
 
 
-// -------------------------- NEOPIXEL COLORS ------------------------------------_
-// Derived from 8Bitmixtape code, could be simplifoed, only one Neopixel as default
+// -------------------------- SETUP ------------------------------------
 
-void setNeopixel(uint8_t R, uint8_t G, uint8_t B){
-  pixels.setPixelColor(0, pixels.Color(R, G, B));
-  pixels.show(); 
+
+void setup()
+{
+  pinMode(NEOPIXELPIN, OUTPUT);
+  pinMode(MIDIPIN, OUTPUT);
+  pinMode(LEDPIN, OUTPUT);
+  swSerial.begin(31250);                                     // Starts Software Serial with MIDI speed
+  
+  pixels.begin();                                            // This initializes the NeoPixel library.
+  pixels.setBrightness(20);
+  setNeopixel(255,255,0);  
+  delay(50);
+  
 }
+
+
+
+// -------------------------- MAIN LOOP  ------------------------------------
+
+
+void loop(){
+  
+    getPlayMode();
+
+    switch(playMode) {
+      case 0: // 
+        cc = 43;
+        ccMin = 0;
+        ccMax = 127;
+        setNeopixel(255,0,0);
+        break;
+      case 1: // 
+        cc = 43;
+        ccMin = 65;
+        ccMax = 127;
+        setNeopixel(0,255,0);
+        break; 
+      case 2: // 
+        cc = 43;
+        ccMin = 0;
+        ccMax = 64;
+        setNeopixel(0,0,255);
+        break;   
+      case 3: // 
+        cc = 41;
+        ccMin = 0;
+        ccMax = 64;
+        setNeopixel(0,255,255);
+        break;  
+    }
+    
+    midiClock();  
+    
+    
+    // Midi status byte (175+channel), CC message number, CC data value
+    midiMsg(random(175+chanMin,175+chanMax), cc, random(ccMin, ccMax));
+    
+    blinke();                                                 // Blink LED indicator
+    delay(analogReadScaled());                                // Loop speed from pot
+  }

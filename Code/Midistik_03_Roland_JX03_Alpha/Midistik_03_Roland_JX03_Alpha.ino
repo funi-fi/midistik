@@ -94,32 +94,38 @@ void setup()
   
   pixels.begin();                                            // This initializes the NeoPixel library.
   pixels.setBrightness(20);
-  pixels.setPixelColor(0, pixels.Color(255, 0, 255));      // Neopixel color, use eg for debugging versions
+  pixels.setPixelColor(0, pixels.Color(0, 255, 255));        // Neopixel color, use eg for debugging versions
   pixels.show();   
   delay(50);
   
 }
 
-uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
-{
-  uint16_t value = analogRead(POTI);
-  if (value > 511) value = 511;
-  return value * 2;
-}
 
 // -------------------------- MAIN LOOP  ------------------------------------
 
 void loop()
 {
-
-    // cycle MIDI cc values, eg 71-74, 
-    for (uint8_t midiCC = 74; midiCC < 75; midiCC ++) { 
-    //midiClock();                                              // Sends MIDI Clock, comment out if using internal tempo from Volca
-    midiMsg(0xB0, midiCC, random(0, 127));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
-    blinke();                                                 // Blink LED indicator
-    delay(analogReadScaled());                                // Loop speed from pot
+    
+    // cycle MIDI cc values, eg 71-74 (JX-03 Res, EnvA&D, Cutoff) 
+    for (uint8_t midiCC = 49; midiCC < 52; midiCC ++) { 
+      midiClock();                                              // Sends MIDI Clock, comment out if using internal tempo from Volca
+      midiMsg(0xB0, midiCC, random(0, 20));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
+      blinke();                                                 // Blink LED indicator
+      delay(analogReadScaled());                                // Loop speed from pot
   }
 
+}
+
+
+// --------------------------- MIDI / CLOCK / BLINK ------------------------------
+
+
+uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
+{
+  uint16_t value = analogRead(POTI);
+  // if (value > 511) value = 511;
+  // return value * 2;
+  return value;
 }
 
 void midiMsg(uint8_t cmd, uint8_t pitch, uint8_t velocity) {  // Same structure as Note on/off for MIDI CC
@@ -130,11 +136,12 @@ void midiMsg(uint8_t cmd, uint8_t pitch, uint8_t velocity) {  // Same structure 
 
 void midiClock(){
   swSerial.write(0xF8);                                      // Send MIDI message for clock pulse = 0xF8 or 248 (24ppqn)
+  //delay(5);
 }
 
 void blinke(){                                               // Blink indicator LED once
   digitalWrite(LEDPIN, HIGH);
-  delay(5);
+  delay(2);
   digitalWrite(LEDPIN, LOW);
 }
 

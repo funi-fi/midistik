@@ -8,17 +8,18 @@
 \____|__  /___/_______  /___/_______  /  |____|   |___|____|__ \
         \/            \/            \/                        \/
                  
-                           ATTINY85 Pins on v 0.3
-                           ======================
+                              ATTINY85 Pins
+                              =============
                                  _______
                                 |   U   |                                     
    RST (SYNC tbd) <- D5/A0  PB5-|       |- VCC                                
-   SD -> *SD-prog -> D3/A3  PB3-| ATTINY|- PB2  D2    -> MIDI OUT
-               POTI  D4/A2  PB4-|   85  |- PB1  D1    -> Indicator LED
-                            GND-|       |- PB0  D0    -> NEOPIXELS
+   SD -> *SD-prog -> D3/A3  PB3-| ATTINY|- PB2  D2/A1 <- POTI_RIGHT
+   Alt.Sensor(ring)  D4/A2  PB4-|   85  |- PB1  D1    -> MIDI OUT
+                            GND-|       |- PB0  D0    -> NEOPIXELS / LED
                                 |_______|
                                 
-          (Notice: Chip installed marker facing down on MIDISTIK v0.3 board)
+          (Notice: Chip installed marker facing down on MIDISTIK v0.2 board)
+                                
 
   * Funi.fi Midi randomiser experimentations by Tuomo Tammenpää (@kimitobo)
     https://github.com/funi-fi
@@ -43,7 +44,7 @@
    
  */
 
-#ifdef __AVR__                        // From 8Bitmixtape code, needed?
+#ifdef __AVR__
 #include <avr/power.h>
 #endif
 
@@ -51,6 +52,7 @@
 #include <SoftwareSerial.h>
 
 // hardware description / pin connections
+#define MIDICHAN      0xB0
 #define NEOPIXELPIN   0
 #define LEDPIN        1
 #define MIDIPIN       2
@@ -58,11 +60,9 @@
 #define BUTTON        A3               // Button in Analog pin, from 8BitMixtape code, where two buttons in same pin
 #define NUMPIXELS     1                // Option for several neopixels
 
-uint8_t playMode = 1;                   // Toggle modes 1-n
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIXELPIN, NEO_GRB + NEO_KHZ800);
-SoftwareSerial swSerial(5, MIDIPIN);  // RX, TX  // RX not used, has to be defined?, TX = MIDI out
-
+SoftwareSerial swSerial(5, MIDIPIN); // RX, TX  // RX not used, has to be defined?, TX = MIDI out
 
 /*
 
@@ -71,25 +71,19 @@ SoftwareSerial swSerial(5, MIDIPIN);  // RX, TX  // RX not used, has to be defin
   First Midistik experiemnts have been tested with Korg Volca series, but you
   can just check MIDI implementation chart of your MIDI device and change the
   channell, CC addresses and values accordingly in the Main loop.
+
   
-
-KORG VOLCA SAMPLE MIDI CC PARAMETERS
-http://www.korg.com/us/products/dj/volca_sample/
-
-07  Volume
-10  Pan
-40  Sample start
-41  Sample length
-42  HiCut
-43  Speed
-44  Pitch EG Int
-45  Pitch EG Attack
-46  Pitch EG Decay
-47  Amp EG Attack
-48  Amp EG Decay
 */
 
-// -------------------------- SETUP ------------------------------------
+int midiCCtab[8] = 
+{
+  // 44, 44, 44, 44, 44, 44, 45, 50       // Korg Volca Keys: Cutoff, EGint
+  // 57, 58, 40, 41, 57, 58, 40, 41       // Korg Volca Beats:
+  // 23, 71, 74, 23, 71, 74, 23, 74       // Roland JX-03 Filters:
+  70, 71, 72, 73, 74, 75, 76, 77        // Digitakt Filter section
+};
+
+// -------------------------- SETUP -------------------------------------
 
 void setup()
 {
@@ -100,34 +94,31 @@ void setup()
   
   pixels.begin();                                            // This initializes the NeoPixel library.
   pixels.setBrightness(20);
-  setNeopixel(255,255,0);  
+  pixels.setPixelColor(0, pixels.Color(255, 255, 0));        // Neopixel color, use eg for debugging versions
+  pixels.show();   
   delay(50);
   
 }
 
-uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
-{
-  uint16_t value = analogRead(POTI);
-  if (value > 511) value = 511;
-  return value * 2;
-}
-
-// -------------------------- MAIN LOOP  ------------------------------------
+// -------------------------- MAIN LOOP -------------------------------------
 
 void loop()
 {
+      // midiClock();                                               // Sends MIDI Clock, comment out if using internal tempo from Volca
+      midiMsg(MIDICHAN, midiCCtab[random(0,7)], random(30,127));     // Channel, randomise CC from table, random scale
+      blinke();                                                     // Blink LED indicator
+      delay(analogReadScaled());                                    // Loop speed from pot
 
-    
-  // cycle MIDI channels 1-10 (Volca Sample), cycle 0xB0-0xB1 if just channel 1 or change to some other cycle logic of your choice
-    for (uint8_t midiStatusByte = 0xB0; midiStatusByte < 0xB9; midiStatusByte ++) { 
+}
+// --------------------------- MIDI / CLOCK / BLINK ------------------------------
 
-    //midiClock();                                            // Sends MIDI Clock, comment out if using internal tempo from Volca
-    midiMsg(midiStatusByte, 43, random(0, 127));              // eg. MIDI CC 43, Sample Speed Volca Sample, play with random ranges.
-    blinke();                                                 // Blink LED indicator
-    getButton();
-    delay(analogReadScaled());                                // Loop speed from pot
-  }
 
+uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
+{
+  uint16_t value = analogRead(POTI);
+  // if (value > 511) value = 511;
+  // return value * 2;
+  return value;
 }
 
 void midiMsg(uint8_t cmd, uint8_t pitch, uint8_t velocity) {  // Same structure as Note on/off for MIDI CC
@@ -138,27 +129,49 @@ void midiMsg(uint8_t cmd, uint8_t pitch, uint8_t velocity) {  // Same structure 
 
 void midiClock(){
   swSerial.write(0xF8);                                      // Send MIDI message for clock pulse = 0xF8 or 248 (24ppqn)
+  //delay(5);
 }
 
 void blinke(){                                               // Blink indicator LED once
   digitalWrite(LEDPIN, HIGH);
-  delay(5);
+  delay(2);
   digitalWrite(LEDPIN, LOW);
 }
 
-void getButton(){                                             // Button in Analog pin
-  if (analogRead(BUTTON) < 380){                              // More buttons with different pulldown resistors
-    playMode = playMode + 1 && 3;
+
+// -------------------- NEOPIXEL COLOR ------------------------------------
+
+  void setColorAllPixel(uint32_t color) // Re: Option for several neopizels
+{
+  uint8_t n;
+  for (n = 0; n < NUMPIXELS; n++)
+  {
+    pixels.setPixelColor(n, 0); // off
   }
-  return;
 }
 
+void rainbowCycle(uint8_t wait, uint8_t rounds) {
+  uint16_t i, j;
 
+  for (j = 0; j < 256 * rounds; j++) { // 5 cycles of all colors on wheel
+    for (i = 0; i < pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+    }
+    pixels.show();
+    delay(5);
+  }
+}
 
-// -------------------------- NEOPIXEL COLORS ------------------------------------_
-// Derived from 8Bitmixtape code, could be simplifoed, only one Neopixel as default
-
-void setNeopixel(uint8_t R, uint8_t G, uint8_t B){
-  pixels.setPixelColor(0, pixels.Color(R, G, B));
-  pixels.show(); 
+// Input a value 0 to 255 to get a color value. The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if (WheelPos < 85) {
+    return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if (WheelPos < 170) {
+    WheelPos -= 85;
+    return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
 }

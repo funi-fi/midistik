@@ -115,8 +115,8 @@ void setup()
 uint16_t analogReadScaled()                                  // Scaling for pot values, depends on resitors, needs rework
 {
   uint16_t value = analogRead(POTI);
-  value = map(value, 0, 70, 200, 0);
-  return value;
+  if (value > 511) value = 511;
+  return value * 2;
 }
 
 // -------------------------- MAIN LOOP  ------------------------------------
@@ -125,11 +125,12 @@ void loop()
 {
 
     // cycle MIDI cc values, eg 23-26 (Microkorg Filter envelopes)
-    for (uint8_t midiCC = 23; midiCC < 27; midiCC ++) { 
+    for (uint8_t midiCC = 57; midiCC < 60; midiCC ++) { 
     //midiClock();                                              // Sends MIDI Clock, comment out if using internal tempo from Volca
-    midiMsg(0xB0, midiCC, random(0, 127));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
+    midiMsg(0xB9, midiCC, random(0, 127));                    // Randomise midi CC 43-45 on Channel 1 (0xB0)
     blinke();                                                 // Blink LED indicator
-    delay(analogReadScaled());                                // Loop speed from pot
+    delay(100);
+    //delay(analogReadScaled());                                // Loop speed from pot
   }
 
 }
